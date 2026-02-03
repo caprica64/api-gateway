@@ -1,0 +1,5 @@
+#!/bin/bash
+# Placeholder bootstrap file for Swift Lambda
+# This would normally be the compiled Swift binary
+echo "Swift Lambda function placeholder"
+exit 0

@@ -113,7 +113,13 @@ resource "aws_api_gateway_deployment" "prime_deployment" {
   ]
 
   rest_api_id = aws_api_gateway_rest_api.prime_api.id
-  stage_name  = var.stage_name
+}
+
+# API Gateway Stage
+resource "aws_api_gateway_stage" "prime_stage" {
+  deployment_id = aws_api_gateway_deployment.prime_deployment.id
+  rest_api_id   = aws_api_gateway_rest_api.prime_api.id
+  stage_name    = var.stage_name
 }
 
 # Data source for current AWS region
