@@ -1,6 +1,6 @@
 # Prime Checker API
 
-A production-ready Terraform-based AWS infrastructure that creates an API Gateway connected to a Lambda function to check if numbers are prime. Built with modular Terraform architecture for scalability and maintainability.
+A production-ready Terraform-based AWS infrastructure that creates an API Gateway connected to a Swift Lambda function to check if numbers are prime. Built with modular Terraform architecture for scalability and maintainability.
 
 ## 🚀 Live API Endpoint
 
@@ -10,7 +10,7 @@ A production-ready Terraform-based AWS infrastructure that creates an API Gatewa
 ## 🏗️ Architecture
 
 - **API Gateway**: Regional REST API with `/prime` endpoint and CORS support
-- **Lambda Function**: Node.js 18.x function with efficient prime checking algorithm
+- **Lambda Function**: Swift custom runtime with efficient prime checking algorithm
 - **IAM Roles**: Least-privilege security with proper execution permissions
 - **Modular Structure**: Organized using Terraform modules for reusability
 
@@ -79,6 +79,7 @@ curl -X POST https://w3172e9z33.execute-api.us-east-1.amazonaws.com/dev/prime \
 ### Prerequisites
 - AWS CLI configured with appropriate permissions
 - Terraform >= 1.5.7 installed
+- Docker installed (for Swift Lambda compilation)
 - Valid AWS credentials
 
 ### Quick Start
@@ -90,14 +91,21 @@ curl -X POST https://w3172e9z33.execute-api.us-east-1.amazonaws.com/dev/prime \
    # Edit terraform.tfvars with your preferred values
    ```
 
-2. **Deploy infrastructure**:
+2. **Build Swift Lambda function**:
+   ```bash
+   cd modules/lambda/src
+   ./build.sh
+   cd ../../..
+   ```
+
+3. **Deploy infrastructure**:
    ```bash
    terraform init
    terraform plan
    terraform apply
    ```
 
-3. **Test the deployment**:
+4. **Test the deployment**:
    ```bash
    # Use the API Gateway URL from terraform output
    curl -X POST $(terraform output -raw api_gateway_url)/prime \
@@ -126,32 +134,51 @@ lambda_function_name = "prime-checker"    # Lambda function name
 │   │   ├── main.tf         # Lambda resources
 │   │   ├── variables.tf    # Lambda variables
 │   │   ├── outputs.tf      # Lambda outputs
-│   │   └── src/            # Lambda source code
-│   │       ├── index.js    # Node.js prime checker
-│   │       ├── Package.swift # Swift implementation (alternative)
-│   │       └── build.sh    # Build script for Swift
+│   │   └── src/            # Swift Lambda source code
+│   │       ├── Package.swift           # Swift package definition
+│   │       ├── build.sh               # Docker-based build script
+│   │       ├── bootstrap              # Lambda runtime bootstrap (generated)
+│   │       ├── lambda-deployment.zip  # Deployment package (generated)
+│   │       └── Sources/
+│   │           └── PrimeChecker/
+│   │               └── main.swift     # Swift prime checker implementation
 │   └── api-gateway/        # API Gateway module
 │       ├── main.tf         # API Gateway resources
 │       ├── variables.tf    # API Gateway variables
 │       └── outputs.tf      # API Gateway outputs
 ```
 
-## ⚡ Lambda Function Features
+## ⚡ Swift Lambda Function Features
+
+### Runtime Implementation
+- **Custom Runtime**: Uses AWS Lambda Runtime for Swift (provided.al2)
+- **Cross-Compilation**: Docker-based build for Amazon Linux compatibility
+- **Static Linking**: Self-contained binary with minimal dependencies
+- **Performance**: Native compiled code for optimal execution speed
 
 ### Prime Algorithm
-- **Efficient Implementation**: Uses square root optimization
+- **Efficient Implementation**: Uses square root optimization with stride iteration
 - **Edge Case Handling**: Properly handles 0, 1, 2, and negative numbers
-- **Performance**: O(√n) time complexity
+- **Performance**: O(√n) time complexity with optimized loop structure
+- **Type Safety**: Swift's strong typing prevents runtime errors
+
+### Build Process
+- **Docker Integration**: Uses `swift:5.9-amazonlinux2` for consistent builds
+- **Static Compilation**: `--static-swift-stdlib` flag for standalone deployment
+- **Architecture Targeting**: Cross-compiles from ARM64 to x86_64 for Lambda
+- **Automated Packaging**: Creates deployment-ready ZIP with bootstrap executable
 
 ### Error Handling
-- **Input Validation**: Checks for valid numeric input
-- **Graceful Failures**: Returns structured error responses
-- **Logging**: CloudWatch integration for monitoring
+- **Input Validation**: Robust JSON parsing and type checking
+- **Graceful Failures**: Returns structured error responses with proper HTTP status codes
+- **CORS Integration**: Built-in CORS headers for all responses including errors
+- **Logging**: CloudWatch integration for monitoring and debugging
 
 ### CORS Support
 - **Cross-Origin Requests**: Enabled for web applications
 - **Proper Headers**: Access-Control-Allow-Origin, Methods, Headers
-- **OPTIONS Method**: Pre-flight request support
+- **OPTIONS Method**: Pre-flight request support with dedicated handler
+- **Error Responses**: CORS headers included in all response types
 
 ## 🔧 Infrastructure Details
 
@@ -162,7 +189,7 @@ lambda_function_name = "prime-checker"    # Lambda function name
 - **API Gateway Integration**: Lambda proxy integration
 - **API Gateway Deployment**: Automated deployment
 - **API Gateway Stage**: Environment-specific stage (dev/prod)
-- **Lambda Function**: Node.js 18.x runtime
+- **Lambda Function**: Swift custom runtime (provided.al2)
 - **IAM Role**: Lambda execution role
 - **IAM Policy**: Basic execution permissions
 - **Lambda Permission**: API Gateway invoke permission
@@ -182,10 +209,11 @@ lambda_function_name = "prime-checker"    # Lambda function name
 - **Alarms**: Can be configured for error rates and latency
 
 ### Performance Characteristics
-- **Cold Start**: ~100-200ms for Node.js Lambda
-- **Warm Execution**: ~1-5ms for prime calculations
-- **Memory Usage**: 128MB allocated (adjustable)
+- **Cold Start**: ~200-300ms for Swift Lambda (includes runtime initialization)
+- **Warm Execution**: <1ms for prime calculations (native compiled performance)
+- **Memory Usage**: 128MB allocated (adjustable, efficient due to compiled nature)
 - **Timeout**: 30 seconds (configurable)
+- **Binary Size**: ~21MB deployment package (includes Swift runtime)
 
 ## 🚀 Production Considerations
 
@@ -205,11 +233,50 @@ lambda_function_name = "prime-checker"    # Lambda function name
 - **WAF Integration**: Web Application Firewall support
 - **VPC Integration**: Private subnet deployment option
 
+## 🔄 Swift Migration
+
+### Why Swift?
+This project was migrated from Node.js to Swift to demonstrate:
+- **Performance**: Native compiled code execution
+- **Type Safety**: Compile-time error detection
+- **Memory Efficiency**: Lower runtime memory footprint
+- **AWS Integration**: Seamless integration with AWS Lambda Runtime
+
+### Migration Details
+- **Runtime Change**: From Node.js 18.x to Swift custom runtime (provided.al2)
+- **Build Process**: Docker-based cross-compilation for Amazon Linux
+- **API Compatibility**: Maintains identical REST API interface
+- **Error Handling**: Enhanced with Swift's robust error handling
+- **CORS Support**: Improved CORS implementation with proper OPTIONS handling
+
+### Build Requirements
+The Swift Lambda requires Docker for cross-compilation:
+```bash
+# Build the Swift Lambda function
+cd modules/lambda/src
+./build.sh
+
+# This creates:
+# - bootstrap: The Lambda runtime executable
+# - lambda-deployment.zip: Ready-to-deploy package
+```
+
+### Development Workflow
+1. **Modify Swift Code**: Edit `Sources/PrimeChecker/main.swift`
+2. **Update Dependencies**: Modify `Package.swift` if needed
+3. **Build**: Run `./build.sh` to create deployment package
+4. **Deploy**: Run `terraform apply` to update Lambda function
+
 ## 🔄 CI/CD Integration
 
 ### GitHub Actions Ready
 ```yaml
-# Example workflow step
+# Example workflow step for Swift Lambda
+- name: Build Swift Lambda
+  run: |
+    cd modules/lambda/src
+    ./build.sh
+    
 - name: Deploy Infrastructure
   run: |
     terraform init
