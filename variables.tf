@@ -22,6 +22,12 @@ variable "lambda_function_name" {
   default     = "prime-checker"
 }
 
+variable "factorial_function_name" {
+  description = "Name of the Factorial Lambda function"
+  type        = string
+  default     = "factorial-calculator"
+}
+
 variable "enable_xray_tracing" {
   description = "Enable X-Ray distributed tracing for API Gateway and Lambda"
   type        = bool

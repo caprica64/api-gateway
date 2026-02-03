@@ -68,7 +68,7 @@ resource "aws_cloudwatch_log_group" "xray_log_group" {
 resource "aws_xray_sampling_rule" "api_sampling_rule" {
   count = var.enable_xray_tracing ? 1 : 0
   
-  rule_name      = "${var.function_name}-sampling-rule"
+  rule_name      = "${substr(var.function_name, 0, 20)}-rule"
   priority       = 9000
   version        = 1
   reservoir_size = 1

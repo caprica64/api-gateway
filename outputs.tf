@@ -18,6 +18,16 @@ output "lambda_function_name" {
   value       = module.prime_checker_lambda.lambda_function_name
 }
 
+output "factorial_lambda_function_arn" {
+  description = "ARN of the Factorial Lambda function"
+  value       = module.factorial_calculator_lambda.lambda_function_arn
+}
+
+output "factorial_lambda_function_name" {
+  description = "Name of the Factorial Lambda function"
+  value       = module.factorial_calculator_lambda.lambda_function_name
+}
+
 output "xray_enabled" {
   description = "Whether X-Ray tracing is enabled"
   value       = module.xray_tracing.xray_enabled

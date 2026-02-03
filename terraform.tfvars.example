@@ -3,6 +3,7 @@ aws_region           = "us-east-1"
 api_name            = "prime-checker-api"
 stage_name          = "dev"
 lambda_function_name = "prime-checker"
+factorial_function_name = "factorial-calculator"
 
 # X-Ray Tracing Configuration
 enable_xray_tracing  = true    # Enable distributed tracing
