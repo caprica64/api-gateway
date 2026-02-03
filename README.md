@@ -1,2 +1,3 @@
 # api-gateway
-AWS API Gateway on Terraform
+
+This repository contains a Terraform project for provisioning Amazon API Gateway resources with multiple components and configurations.
