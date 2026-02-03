@@ -34,6 +34,11 @@ resource "aws_lambda_function" "prime_checker" {
 
   source_code_hash = filebase64sha256("${path.module}/lambda_function.zip")
 
+  # Enable X-Ray tracing
+  tracing_config {
+    mode = var.enable_xray_tracing ? "Active" : "PassThrough"
+  }
+
   depends_on = [
     aws_iam_role_policy_attachment.lambda_basic_execution,
   ]

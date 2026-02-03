@@ -11,6 +11,7 @@ A production-ready Terraform-based AWS infrastructure that creates an API Gatewa
 
 - **API Gateway**: Regional REST API with `/prime` endpoint and CORS support
 - **Lambda Function**: Swift custom runtime with efficient prime checking algorithm
+- **X-Ray Tracing**: Distributed tracing for API Gateway and Lambda with 10% sampling rate
 - **IAM Roles**: Least-privilege security with proper execution permissions
 - **Modular Structure**: Organized using Terraform modules for reusability
 
@@ -119,6 +120,11 @@ aws_region           = "us-east-1"        # AWS region for deployment
 api_name            = "prime-checker-api" # API Gateway name
 stage_name          = "dev"               # API Gateway stage
 lambda_function_name = "prime-checker"    # Lambda function name
+
+# X-Ray Tracing Configuration
+enable_xray_tracing  = true               # Enable distributed tracing
+xray_sampling_rate   = 0.1                # Sample 10% of requests (0.0 to 1.0)
+log_retention_days   = 14                 # CloudWatch log retention in days
 ```
 
 ## 📁 Project Structure
@@ -142,10 +148,14 @@ lambda_function_name = "prime-checker"    # Lambda function name
 │   │       └── Sources/
 │   │           └── PrimeChecker/
 │   │               └── main.swift     # Swift prime checker implementation
-│   └── api-gateway/        # API Gateway module
-│       ├── main.tf         # API Gateway resources
-│       ├── variables.tf    # API Gateway variables
-│       └── outputs.tf      # API Gateway outputs
+│   ├── api-gateway/        # API Gateway module
+│   │   ├── main.tf         # API Gateway resources
+│   │   ├── variables.tf    # API Gateway variables
+│   │   └── outputs.tf      # API Gateway outputs
+│   └── xray/               # X-Ray tracing module
+│       ├── main.tf         # X-Ray resources and IAM policies
+│       ├── variables.tf    # X-Ray variables
+│       └── outputs.tf      # X-Ray outputs
 ```
 
 ## ⚡ Swift Lambda Function Features
@@ -188,11 +198,13 @@ lambda_function_name = "prime-checker"    # Lambda function name
 - **API Gateway Methods**: POST and OPTIONS (CORS)
 - **API Gateway Integration**: Lambda proxy integration
 - **API Gateway Deployment**: Automated deployment
-- **API Gateway Stage**: Environment-specific stage (dev/prod)
-- **Lambda Function**: Swift custom runtime (provided.al2)
-- **IAM Role**: Lambda execution role
-- **IAM Policy**: Basic execution permissions
+- **API Gateway Stage**: Environment-specific stage (dev/prod) with X-Ray tracing
+- **Lambda Function**: Swift custom runtime (provided.al2) with X-Ray tracing
+- **IAM Role**: Lambda execution role with X-Ray permissions
+- **IAM Policy**: Basic execution and X-Ray tracing permissions
 - **Lambda Permission**: API Gateway invoke permission
+- **X-Ray Sampling Rule**: Configurable sampling rate for distributed tracing
+- **CloudWatch Log Group**: X-Ray trace storage and retention
 
 ### Security Features
 - **Least Privilege IAM**: Minimal required permissions
@@ -202,11 +214,33 @@ lambda_function_name = "prime-checker"    # Lambda function name
 
 ## 📊 Monitoring and Observability
 
+### X-Ray Distributed Tracing
+- **End-to-End Visibility**: Track requests from API Gateway through Lambda execution
+- **Performance Analysis**: Identify bottlenecks and latency issues
+- **Error Tracking**: Detailed error analysis with stack traces
+- **Service Map**: Visual representation of service dependencies
+- **Sampling Configuration**: 10% sampling rate (configurable) to balance cost and visibility
+
+### X-Ray Features
+- **Request Tracing**: Complete request lifecycle from API Gateway to Lambda
+- **Subsegment Analysis**: Detailed breakdown of Lambda execution phases
+- **Error Analysis**: Automatic error detection and categorization
+- **Performance Metrics**: Response times, throughput, and error rates
+- **Custom Annotations**: Searchable metadata for filtering traces
+
 ### CloudWatch Integration
 - **Lambda Logs**: Automatic logging to CloudWatch
 - **API Gateway Logs**: Request/response logging available
+- **X-Ray Traces**: Stored in dedicated CloudWatch log group
 - **Metrics**: Built-in AWS metrics for performance monitoring
 - **Alarms**: Can be configured for error rates and latency
+
+### Accessing X-Ray Data
+1. **AWS Console**: Navigate to X-Ray service in AWS Console
+2. **Service Map**: Visual overview of request flow and dependencies
+3. **Traces**: Detailed individual request traces
+4. **Analytics**: Query and filter traces by various criteria
+5. **CloudWatch**: Integrated metrics and log correlation
 
 ### Performance Characteristics
 - **Cold Start**: ~200-300ms for Swift Lambda (includes runtime initialization)

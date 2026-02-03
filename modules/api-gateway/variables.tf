@@ -17,3 +17,9 @@ variable "lambda_function_name" {
   description = "Name of the Lambda function"
   type        = string
 }
+
+variable "enable_xray_tracing" {
+  description = "Enable X-Ray tracing for API Gateway"
+  type        = bool
+  default     = true
+}

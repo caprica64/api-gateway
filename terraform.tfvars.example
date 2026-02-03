@@ -3,3 +3,8 @@ aws_region           = "us-east-1"
 api_name            = "prime-checker-api"
 stage_name          = "dev"
 lambda_function_name = "prime-checker"
+
+# X-Ray Tracing Configuration
+enable_xray_tracing  = true    # Enable distributed tracing
+xray_sampling_rate   = 0.1     # Sample 10% of requests (0.0 to 1.0)
+log_retention_days   = 14      # CloudWatch log retention in days

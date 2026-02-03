@@ -17,3 +17,18 @@ output "lambda_function_name" {
   description = "Name of the Lambda function"
   value       = module.prime_checker_lambda.lambda_function_name
 }
+
+output "xray_enabled" {
+  description = "Whether X-Ray tracing is enabled"
+  value       = module.xray_tracing.xray_enabled
+}
+
+output "xray_sampling_rule_name" {
+  description = "Name of the X-Ray sampling rule"
+  value       = module.xray_tracing.xray_sampling_rule_name
+}
+
+output "xray_log_group_name" {
+  description = "Name of the X-Ray CloudWatch log group"
+  value       = module.xray_tracing.xray_log_group_name
+}
