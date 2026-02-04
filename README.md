@@ -12,9 +12,20 @@ A production-ready Terraform-based AWS infrastructure that creates an API Gatewa
 
 - **API Gateway**: Regional REST API with `/prime` and `/factorial` endpoints and CORS support
 - **Lambda Functions**: Swift custom runtime with efficient algorithms for prime checking and factorial calculation
+- **Unified Lambda Module**: Single, reusable Terraform module for all Lambda functions
 - **X-Ray Tracing**: Distributed tracing for API Gateway and Lambda with 10% sampling rate
 - **IAM Roles**: Least-privilege security with proper execution permissions
-- **Modular Structure**: Organized using Terraform modules for reusability
+- **Modular Structure**: Organized using Terraform modules for reusability and maintainability
+
+### Unified Lambda Module Benefits
+
+The project uses a single, parameterized Lambda module (`modules/lambda-function/`) that can be instantiated multiple times with different configurations:
+
+- **Code Reusability**: Single module definition for all Lambda functions
+- **Consistency**: Standardized infrastructure patterns across functions
+- **Maintainability**: Updates to Lambda infrastructure apply to all functions
+- **Flexibility**: Supports any runtime, handler, and configuration
+- **Scalability**: Easy to add new Lambda functions without duplicating code
 
 ## 📡 API Usage
 
@@ -141,11 +152,17 @@ curl -X POST https://w3172e9z33.execute-api.us-east-1.amazonaws.com/dev/factoria
    # Edit terraform.tfvars with your preferred values
    ```
 
-2. **Build Swift Lambda function**:
+2. **Build Swift Lambda functions**:
    ```bash
-   cd modules/lambda/src
+   # Build Prime Checker Lambda
+   cd modules/lambda-function/functions/prime-checker/src
    ./build.sh
-   cd ../../..
+   cd ../../../../..
+   
+   # Build Factorial Calculator Lambda
+   cd modules/lambda-function/functions/factorial-calculator/src
+   ./build.sh
+   cd ../../../../..
    ```
 
 3. **Deploy infrastructure**:
@@ -186,30 +203,30 @@ log_retention_days   = 14                 # CloudWatch log retention in days
 ├── terraform.tfvars.example # Example configuration
 ├── .terraform.lock.hcl      # Provider version lock
 ├── modules/
-│   ├── lambda/              # Prime Lambda function module
+│   ├── lambda-function/     # Unified Lambda function module (reusable)
 │   │   ├── main.tf         # Lambda resources
 │   │   ├── variables.tf    # Lambda variables
 │   │   ├── outputs.tf      # Lambda outputs
-│   │   └── src/            # Swift Lambda source code
-│   │       ├── Package.swift           # Swift package definition
-│   │       ├── build.sh               # Docker-based build script
-│   │       ├── bootstrap              # Lambda runtime bootstrap (generated)
-│   │       ├── lambda-deployment.zip  # Deployment package (generated)
-│   │       └── Sources/
-│   │           └── PrimeChecker/
-│   │               └── main.swift     # Swift prime checker implementation
-│   ├── factorial-lambda/    # Factorial Lambda function module
-│   │   ├── main.tf         # Lambda resources
-│   │   ├── variables.tf    # Lambda variables
-│   │   ├── outputs.tf      # Lambda outputs
-│   │   └── src/            # Swift Lambda source code
-│   │       ├── Package.swift           # Swift package definition
-│   │       ├── build.sh               # Docker-based build script
-│   │       ├── bootstrap              # Lambda runtime bootstrap (generated)
-│   │       ├── factorial-deployment.zip # Deployment package (generated)
-│   │       └── Sources/
-│   │           └── FactorialCalculator/
-│   │               └── main.swift     # Swift factorial calculator implementation
+│   │   ├── README.md       # Module documentation
+│   │   └── functions/      # Function source code and packages
+│   │       ├── prime-checker/
+│   │       │   ├── src/    # Swift source code
+│   │       │   │   ├── Package.swift           # Swift package definition
+│   │       │   │   ├── build.sh               # Docker-based build script
+│   │       │   │   ├── bootstrap              # Lambda runtime bootstrap (generated)
+│   │       │   │   └── Sources/
+│   │       │   │       └── PrimeChecker/
+│   │       │   │           └── main.swift     # Swift prime checker implementation
+│   │       │   └── lambda_function.zip        # Deployment package (generated)
+│   │       └── factorial-calculator/
+│   │           ├── src/    # Swift source code
+│   │           │   ├── Package.swift           # Swift package definition
+│   │           │   ├── build.sh               # Docker-based build script
+│   │           │   ├── bootstrap              # Lambda runtime bootstrap (generated)
+│   │           │   └── Sources/
+│   │           │       └── FactorialCalculator/
+│   │           │           └── main.swift     # Swift factorial calculator implementation
+│   │           └── factorial_function.zip     # Deployment package (generated)
 │   ├── api-gateway/        # API Gateway module
 │   │   ├── main.tf         # API Gateway resources
 │   │   ├── variables.tf    # API Gateway variables
@@ -242,6 +259,10 @@ log_retention_days   = 14                 # CloudWatch log retention in days
 - **Error Handling**: Robust JSON parsing and type checking
 - **CORS Integration**: Built-in CORS headers for all responses including errors
 - **X-Ray Tracing**: Active distributed tracing for performance monitoring
+- **Comprehensive Logging**: Structured logging with Swift Logging framework
+- **Request Correlation**: Request IDs for tracing requests across services
+- **Performance Tracking**: Detailed timing information for optimization
+- **CloudWatch Integration**: Automatic log group creation with retention policies
 
 ## 🔧 Infrastructure Details
 
@@ -257,6 +278,7 @@ log_retention_days   = 14                 # CloudWatch log retention in days
 - **IAM Roles**: Lambda execution roles with X-Ray permissions for both functions
 - **IAM Policies**: Basic execution and X-Ray tracing permissions
 - **Lambda Permissions**: API Gateway invoke permissions for both functions
+- **CloudWatch Log Groups**: Dedicated log groups for both Lambda functions with 14-day retention
 - **X-Ray Sampling Rules**: Configurable sampling rate for distributed tracing
 - **CloudWatch Log Groups**: X-Ray trace storage and retention for both functions
 
@@ -283,18 +305,34 @@ log_retention_days   = 14                 # CloudWatch log retention in days
 - **Custom Annotations**: Searchable metadata for filtering traces
 
 ### CloudWatch Integration
-- **Lambda Logs**: Automatic logging to CloudWatch
+- **Lambda Logs**: Comprehensive execution logging with request IDs, timing, and error tracking
+- **Log Groups**: Dedicated log groups for each Lambda function with 14-day retention
+- **Structured Logging**: Swift Logging framework with metadata for filtering and analysis
 - **API Gateway Logs**: Request/response logging available
 - **X-Ray Traces**: Stored in dedicated CloudWatch log group
 - **Metrics**: Built-in AWS metrics for performance monitoring
 - **Alarms**: Can be configured for error rates and latency
 
-### Accessing X-Ray Data
-1. **AWS Console**: Navigate to X-Ray service in AWS Console
-2. **Service Map**: Visual overview of request flow and dependencies
-3. **Traces**: Detailed individual request traces
-4. **Analytics**: Query and filter traces by various criteria
-5. **CloudWatch**: Integrated metrics and log correlation
+### Lambda Execution Logging
+Both Lambda functions include comprehensive logging:
+- **Request Lifecycle**: Start, processing, and completion events
+- **Performance Metrics**: Execution time and calculation time tracking
+- **Input Validation**: Detailed logging of input validation and error cases
+- **Algorithm Selection**: Logs which algorithm is used (standard vs string-based for factorial)
+- **Result Metadata**: Result length, processing time, and success indicators
+- **Error Tracking**: Detailed error messages with request correlation
+
+### Accessing Logs and Monitoring Data
+1. **CloudWatch Logs**: Navigate to CloudWatch > Log groups in AWS Console
+   - `/aws/lambda/prime-checker`: Prime checker execution logs
+   - `/aws/lambda/factorial-calculator`: Factorial calculator execution logs
+   - `/aws/xray/prime-checker`: X-Ray traces for prime checker
+   - `/aws/xray/factorial-calculator`: X-Ray traces for factorial calculator
+2. **AWS Console**: Navigate to X-Ray service in AWS Console
+3. **Service Map**: Visual overview of request flow and dependencies
+4. **Traces**: Detailed individual request traces
+5. **Analytics**: Query and filter traces by various criteria
+6. **Log Insights**: Use CloudWatch Insights to query structured log data
 
 ### Performance Characteristics
 - **Cold Start**: ~200-300ms for Swift Lambda (includes runtime initialization)
@@ -350,10 +388,31 @@ cd modules/lambda/src
 ```
 
 ### Development Workflow
-1. **Modify Swift Code**: Edit `Sources/PrimeChecker/main.swift`
+1. **Modify Swift Code**: Edit function source in `modules/lambda-function/functions/{function-name}/src/Sources/`
 2. **Update Dependencies**: Modify `Package.swift` if needed
-3. **Build**: Run `./build.sh` to create deployment package
+3. **Build**: Run `./build.sh` in the function's src directory to create deployment package
 4. **Deploy**: Run `terraform apply` to update Lambda function
+
+### Adding New Lambda Functions
+With the unified module, adding new Lambda functions is straightforward:
+
+1. **Create Function Directory**: Add new directory under `modules/lambda-function/functions/`
+2. **Add Source Code**: Create Swift source code and build script
+3. **Update Root Configuration**: Add new module instance in `main.tf`:
+   ```hcl
+   module "new_lambda_function" {
+     source = "./modules/lambda-function"
+     
+     function_name           = "new-function"
+     description            = "Description of new function"
+     deployment_package_path = "./modules/lambda-function/functions/new-function/function.zip"
+     
+     # Configure as needed
+     aws_region             = var.aws_region
+     enable_xray_tracing    = var.enable_xray_tracing
+     log_retention_days     = var.log_retention_days
+   }
+   ```
 
 ## 🔄 CI/CD Integration
 

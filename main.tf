@@ -12,22 +12,42 @@ provider "aws" {
   region = var.aws_region
 }
 
-# Lambda module
+# Prime Checker Lambda module
 module "prime_checker_lambda" {
-  source = "./modules/lambda"
+  source = "./modules/lambda-function"
   
-  function_name      = var.lambda_function_name
-  aws_region         = var.aws_region
-  enable_xray_tracing = var.enable_xray_tracing
+  function_name           = var.lambda_function_name
+  description            = "Swift Lambda function for prime number checking"
+  deployment_package_path = "./modules/lambda-function/functions/prime-checker/lambda_function.zip"
+  aws_region             = var.aws_region
+  enable_xray_tracing    = var.enable_xray_tracing
+  log_retention_days     = var.log_retention_days
+  
+  tags = {
+    Project     = "Prime Checker API"
+    Environment = var.stage_name
+    ManagedBy   = "Terraform"
+    Function    = "prime-checker"
+  }
 }
 
-# Factorial Lambda module
+# Factorial Calculator Lambda module
 module "factorial_calculator_lambda" {
-  source = "./modules/factorial-lambda"
+  source = "./modules/lambda-function"
   
-  function_name      = var.factorial_function_name
-  aws_region         = var.aws_region
-  enable_xray_tracing = var.enable_xray_tracing
+  function_name           = var.factorial_function_name
+  description            = "Swift Lambda function for factorial calculation"
+  deployment_package_path = "./modules/lambda-function/functions/factorial-calculator/factorial_function.zip"
+  aws_region             = var.aws_region
+  enable_xray_tracing    = var.enable_xray_tracing
+  log_retention_days     = var.log_retention_days
+  
+  tags = {
+    Project     = "Factorial Calculator API"
+    Environment = var.stage_name
+    ManagedBy   = "Terraform"
+    Function    = "factorial-calculator"
+  }
 }
 
 # API Gateway module
