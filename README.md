@@ -17,6 +17,64 @@ A production-ready Terraform-based AWS infrastructure that creates an API Gatewa
 - **IAM Roles**: Least-privilege security with proper execution permissions
 - **Modular Structure**: Organized using Terraform modules for reusability and maintainability
 
+## 🔄 Module Flow Architecture
+
+This project demonstrates a clean, modular Terraform architecture with clear separation of concerns:
+
+### Module Structure
+
+```
+main.tf (Root)
+    ├── module "prime_checker_lambda" (Lambda Module Instance)
+    │   ├── Creates Lambda function for prime checking
+    │   ├── Creates IAM role and policies
+    │   ├── Creates CloudWatch log group
+    │   └── Outputs: function_arn, function_name, invoke_arn, role_arn
+    │
+    ├── module "factorial_calculator_lambda" (Lambda Module Instance)
+    │   ├── Creates Lambda function for factorial calculation
+    │   ├── Creates IAM role and policies
+    │   ├── Creates CloudWatch log group
+    │   └── Outputs: function_arn, function_name, invoke_arn, role_arn
+    │
+    ├── module "xray_tracing" (X-Ray Module Instance)
+    │   ├── Creates X-Ray sampling rules
+    │   ├── Creates X-Ray IAM policies
+    │   ├── Creates CloudWatch log group for traces
+    │   └── Attaches X-Ray policy to prime_checker_lambda role
+    │
+    ├── module "factorial_xray_tracing" (X-Ray Module Instance)
+    │   ├── Creates X-Ray sampling rules
+    │   ├── Creates X-Ray IAM policies
+    │   ├── Creates CloudWatch log group for traces
+    │   └── Attaches X-Ray policy to factorial_calculator_lambda role
+    │
+    └── module "prime_api_gateway" (API Gateway Module)
+        ├── Creates REST API
+        ├── Creates /prime and /factorial resources
+        ├── Creates POST and OPTIONS methods
+        ├── Integrates with both Lambda functions using invoke_arn
+        ├── Creates deployment and stage
+        └── Outputs: api_gateway_url, api_gateway_id
+```
+
+### Data Flow
+
+1. **Module Instantiation**: Root `main.tf` creates multiple instances of reusable modules
+2. **Lambda Modules**: Each Lambda module outputs `invoke_arn` and `role_arn`
+3. **X-Ray Modules**: X-Ray modules consume Lambda `role_arn` to attach tracing policies
+4. **API Gateway Module**: Consumes Lambda `invoke_arn` outputs to create integrations
+5. **Root Outputs**: Aggregates module outputs for end-user consumption
+
+### Module Dependencies
+
+```
+Lambda Modules (Independent)
+    ↓ (outputs: invoke_arn, role_arn)
+    ├─→ X-Ray Modules (depends on role_arn)
+    └─→ API Gateway Module (depends on invoke_arn)
+```
+
 ### Unified Lambda Module Benefits
 
 The project uses a single, parameterized Lambda module (`modules/lambda-function/`) that can be instantiated multiple times with different configurations:
@@ -26,6 +84,8 @@ The project uses a single, parameterized Lambda module (`modules/lambda-function
 - **Maintainability**: Updates to Lambda infrastructure apply to all functions
 - **Flexibility**: Supports any runtime, handler, and configuration
 - **Scalability**: Easy to add new Lambda functions without duplicating code
+- **Clear Dependencies**: Explicit input/output flow between modules
+- **Parallel Execution**: Independent modules can be created concurrently
 
 ## 📡 API Usage
 
